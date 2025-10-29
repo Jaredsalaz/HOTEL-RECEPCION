@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, date
@@ -53,10 +53,39 @@ def update_reservation(
     return reservation
 
 @router.delete("/{reservation_id}", response_model=MessageResponse)
-def cancel_reservation(reservation_id: int, db: Session = Depends(get_db)):
-    """Cancel reservation"""
+async def cancel_reservation(
+    reservation_id: int, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Cancel reservation and send cancellation email
+    """
     try:
+        # Get reservation details before cancelling
+        reservation = ReservationService.get_reservation_by_id(db, reservation_id)
+        if not reservation:
+            raise HTTPException(status_code=404, detail="Reservation not found")
+        
+        # Cancel the reservation
         ReservationService.cancel_reservation(db, reservation_id)
+        
+        # Prepare email data
+        reservation_data = {
+            'reservation_id': reservation.id,
+            'guest_name': f"{reservation.guest.first_name} {reservation.guest.last_name}",
+            'room_number': reservation.room.room_number,
+            'check_in_date': reservation.check_in_date.strftime('%d/%m/%Y'),
+            'payment_status': reservation.payment_status
+        }
+        
+        # Send cancellation email in background
+        background_tasks.add_task(
+            EmailService.send_cancellation_email,
+            reservation.guest.email,
+            reservation_data
+        )
+        
         return MessageResponse(message="Reservation cancelled successfully")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -88,7 +117,7 @@ def get_room_reservations(room_id: int, db: Session = Depends(get_db)):
 
 @router.get("/room/{room_id}/blocked-dates")
 def get_room_blocked_dates(room_id: int, db: Session = Depends(get_db)):
-    """Get all blocked dates for a specific room (dates with active reservations)"""
+    """Get all blocked dates for a specific room (dates with active reservations + checkout day for cleaning)"""
     from app.models import Room
     from datetime import timedelta
     
@@ -105,11 +134,16 @@ def get_room_blocked_dates(room_id: int, db: Session = Depends(get_db)):
     ).all()
     
     # Build list of all blocked dates
+    # Include check-in date through check-out date (inclusive) for cleaning buffer
     blocked_dates = []
     for reservation in reservations:
         current_date = reservation.check_in_date
-        while current_date < reservation.check_out_date:
-            blocked_dates.append(current_date.isoformat())
+        # Changed: Include check_out_date (<=) instead of excluding it (<)
+        # This blocks the checkout day for cleaning
+        while current_date <= reservation.check_out_date:
+            # Ensure date is in YYYY-MM-DD format only
+            date_str = current_date.strftime('%Y-%m-%d') if hasattr(current_date, 'strftime') else str(current_date)
+            blocked_dates.append(date_str)
             current_date += timedelta(days=1)
     
     return {
@@ -155,13 +189,9 @@ def check_room_availability(
         if not room:
             raise HTTPException(status_code=404, detail="Habitación no encontrada")
         
-        # Check room status
-        if room.status != "Available":
-            return {
-                "available": False,
-                "reason": f"La habitación está actualmente en estado: {room.status}",
-                "room_id": room_id
-            }
+        # NOTE: We DON'T check room.status here because:
+        # - "Occupied" means someone is there TODAY, but the room can be available for FUTURE dates
+        # - We only check for conflicting reservations in the date range
         
         # Check capacity
         if guests_count > room.capacity:
@@ -276,4 +306,26 @@ async def send_reservation_confirmation(
         raise HTTPException(
             status_code=500,
             detail=f"Error al enviar confirmación: {str(e)}"
+        )
+
+@router.post("/process-expired", response_model=dict)
+def process_expired_reservations(db: Session = Depends(get_db)):
+    """
+    Process expired reservations:
+    - Cancel Pending reservations where check-in date passed (No-Show)
+    - Complete Active reservations where check-out date passed (Overdue)
+    """
+    try:
+        result = ReservationService.process_expired_reservations(db)
+        return {
+            "success": True,
+            "message": "Reservaciones expiradas procesadas",
+            "cancelled_no_shows": result['cancelled_no_shows'],
+            "completed_overdue": result['completed_overdue'],
+            "total_processed": result['total_processed']
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al procesar reservaciones expiradas: {str(e)}"
         )

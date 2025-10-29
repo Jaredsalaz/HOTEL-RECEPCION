@@ -1,9 +1,15 @@
 import api from './api';
 
 export const checkinService = {
-  // Process check-in
+  // Process check-in (create new reservation with immediate check-in)
   checkIn: async (checkInData) => {
     const response = await api.post('/checkin', checkInData);
+    return response.data;
+  },
+
+  // Mark existing reservation as checked-in
+  markCheckIn: async (reservationId) => {
+    const response = await api.post(`/checkin/mark/${reservationId}`);
     return response.data;
   },
 

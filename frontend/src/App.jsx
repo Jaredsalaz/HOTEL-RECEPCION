@@ -67,10 +67,10 @@ function App() {
         {/* Redirect /login to home (guests use modal in navbar) */}
         <Route path="/login" element={<Navigate to="/" replace />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        {/* Admin Routes - Hidden path for security */}
+        <Route path="/secure-admin-xyz789/login" element={<AdminLogin />} />
         <Route
-          path="/admin"
+          path="/secure-admin-xyz789/*"
           element={
             <ProtectedRoute>
               <AdminLayout />
@@ -82,6 +82,9 @@ function App() {
           <Route path="reservations" element={<ReservationManagement />} />
           <Route path="reports" element={<Reports />} />
         </Route>
+        
+        {/* Redirect old admin routes to secure path */}
+        <Route path="/admin/*" element={<Navigate to="/secure-admin-xyz789/login" replace />} />
       </Routes>
     </Router>
     </AuthProvider>

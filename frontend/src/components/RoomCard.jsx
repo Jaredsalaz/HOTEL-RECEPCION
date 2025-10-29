@@ -25,13 +25,14 @@ const RoomCard = ({ room }) => {
 
   // Badges de estado
   const statusBadges = {
-    Available: { text: 'Disponible', color: 'bg-green-100 text-green-800' },
-    Occupied: { text: 'Ocupada', color: 'bg-red-100 text-red-800' },
+    Available: { text: 'Disponible Ahora', color: 'bg-green-100 text-green-800' },
+    Occupied: { text: 'Ocupada Hoy', color: 'bg-orange-100 text-orange-800' },
     Maintenance: { text: 'Mantenimiento', color: 'bg-yellow-100 text-yellow-800' }
   };
 
   const status = statusBadges[room.status] || statusBadges.Available;
-  const isAvailable = room.status === 'Available';
+  // Siempre permitir reservar (el calendario mostrará fechas bloqueadas)
+  const canReserve = true;
 
   /**
    * Handle reservation button click
@@ -159,15 +160,14 @@ const RoomCard = ({ room }) => {
               Ver Detalles
             </button>
             
-            {isAvailable && (
-              <button 
-                className="flex-1 !bg-primary-600 !text-white px-4 py-2 rounded-lg hover:!bg-primary-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-md"
-                onClick={handleReservationClick}
-              >
-                <FiCalendar className="w-4 h-4" />
-                Reservar Ahora
-              </button>
-            )}
+            <button 
+              className="flex-1 !bg-primary-600 !text-white px-4 py-2 rounded-lg hover:!bg-primary-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2 shadow-md"
+              onClick={handleReservationClick}
+              title={room.status === 'Occupied' ? 'Ocupada hoy - Puedes reservar para otras fechas' : 'Reservar ahora'}
+            >
+              <FiCalendar className="w-4 h-4" />
+              {room.status === 'Occupied' ? 'Ver Fechas' : 'Reservar Ahora'}
+            </button>
           </div>
         </div>
       </div>

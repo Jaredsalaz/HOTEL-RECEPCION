@@ -24,11 +24,11 @@ const Button = ({
   const baseClasses = 'font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2';
   
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-lg',
-    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
-    danger: 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg',
-    success: 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg',
-    outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white'
+    primary: 'bg-primary-600 !text-white hover:bg-primary-700 shadow-md hover:shadow-lg',
+    secondary: 'bg-gray-200 !text-gray-800 hover:bg-gray-300',
+    danger: 'bg-red-500 !text-white hover:bg-red-600 shadow-md hover:shadow-lg',
+    success: 'bg-green-500 !text-white hover:bg-green-600 shadow-md hover:shadow-lg',
+    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:!text-white'
   };
   
   const sizes = {

@@ -1,5 +1,7 @@
 import api from './api';
 
+const ADMIN_PREFIX = '/secure-admin-xyz789';
+
 export const authService = {
   // Login
   login: async (username, password) => {
@@ -7,7 +9,7 @@ export const authService = {
     formData.append('username', username);
     formData.append('password', password);
 
-    const response = await api.post('/auth/login', formData, {
+    const response = await api.post(`${ADMIN_PREFIX}/auth/login`, formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -27,7 +29,7 @@ export const authService = {
 
   // Get current admin
   getCurrentAdmin: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get(`${ADMIN_PREFIX}/auth/me`);
     return response.data;
   },
 

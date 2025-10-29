@@ -33,12 +33,21 @@ const MyReservations = () => {
       return;
     }
 
-    fetchReservations();
+    processExpiredAndFetch();
   }, [isAuthenticated, navigate]);
 
-  const fetchReservations = async () => {
+  const processExpiredAndFetch = async () => {
     try {
       setLoading(true);
+      
+      // Primero procesar reservaciones expiradas
+      try {
+        await api.post('/reservations/process-expired');
+      } catch (error) {
+        console.log('Info: No hay reservaciones expiradas para procesar');
+      }
+      
+      // Luego obtener las reservaciones actualizadas
       const response = await api.get(`/guests/${user.id}/reservations`);
       setReservations(response.data);
     } catch (error) {
@@ -49,7 +58,27 @@ const MyReservations = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  // Detectar si una reservación cancelada es No-Show (pagó pero nunca llegó)
+  const isNoShow = (reservation) => {
+    return (
+      reservation.status === 'Cancelled' && 
+      reservation.payment_status === 'Paid' &&
+      !reservation.actual_check_in &&
+      new Date(reservation.check_in_date) < new Date()
+    );
+  };
+
+  const getStatusBadge = (status, reservation = null) => {
+    // Si es No-Show, mostrar badge especial
+    if (reservation && isNoShow(reservation)) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border bg-orange-100 text-orange-800 border-orange-300">
+          <FiAlertCircle className="w-4 h-4" />
+          Expirada (No-Show)
+        </span>
+      );
+    }
+
     const statusConfig = {
       'Pending': { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-300', 
@@ -163,7 +192,7 @@ const MyReservations = () => {
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
-            Canceladas ({reservations.filter(r => r.status === 'Cancelled').length})
+            Canceladas / Expiradas ({reservations.filter(r => r.status === 'Cancelled').length})
           </button>
         </motion.div>
 
@@ -226,7 +255,7 @@ const MyReservations = () => {
                                 {reservation.room?.room_type}
                               </p>
                             </div>
-                            {getStatusBadge(reservation.status)}
+                            {getStatusBadge(reservation.status, reservation)}
                           </div>
 
                           <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -299,6 +328,28 @@ const MyReservations = () => {
                                 Solicitudes especiales:
                               </p>
                               <p className="text-sm text-gray-700">{reservation.special_requests}</p>
+                            </div>
+                          )}
+
+                          {/* No-Show Alert */}
+                          {isNoShow(reservation) && (
+                            <div className="mb-4 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg">
+                              <div className="flex items-start gap-3">
+                                <FiAlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <h4 className="font-semibold text-orange-900 mb-1">
+                                    Reservación Expirada
+                                  </h4>
+                                  <p className="text-sm text-orange-800">
+                                    Esta reservación fue cancelada automáticamente porque la fecha de check-in 
+                                    pasó sin que se realizara el registro de entrada al hotel. 
+                                    El pago fue procesado exitosamente.
+                                  </p>
+                                  <p className="text-xs text-orange-700 mt-2 italic">
+                                    💡 Para futuras reservaciones, asegúrate de hacer check-in en la fecha programada.
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           )}
 

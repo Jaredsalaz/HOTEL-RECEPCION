@@ -27,6 +27,12 @@ export const reservationService = {
 
   // Cancel reservation
   cancelReservation: async (id) => {
+    const response = await api.patch(`/reservations/${id}/cancel`);
+    return response.data;
+  },
+
+  // Delete reservation
+  deleteReservation: async (id) => {
     const response = await api.delete(`/reservations/${id}`);
     return response.data;
   },
@@ -43,13 +49,25 @@ export const reservationService = {
     return response.data;
   },
 
-  // Get today's check-ins
+  // Get today's check-ins (sin 's' para compatibilidad)
+  getTodayCheckIns: async () => {
+    const response = await api.get('/reservations/today/checkins');
+    return response.data;
+  },
+
+  // Get today's check-ins (con 's' - alias)
   getTodaysCheckIns: async () => {
     const response = await api.get('/reservations/today/checkins');
     return response.data;
   },
 
-  // Get today's check-outs
+  // Get today's check-outs (sin 's' para compatibilidad)
+  getTodayCheckOuts: async () => {
+    const response = await api.get('/reservations/today/checkouts');
+    return response.data;
+  },
+
+  // Get today's check-outs (con 's' - alias)
   getTodaysCheckOuts: async () => {
     const response = await api.get('/reservations/today/checkouts');
     return response.data;

@@ -5,6 +5,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCalendar, FiUsers, FiCreditCard, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import '../../styles/datepicker-custom.css';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -29,8 +32,8 @@ const CheckInFormEnhanced = () => {
   
   // Form data
   const [formData, setFormData] = useState({
-    checkIn: '',
-    checkOut: '',
+    checkIn: null, // Cambiar a null para DatePicker
+    checkOut: null, // Cambiar a null para DatePicker
     guestsCount: 1,
     specialRequests: ''
   });
@@ -59,10 +62,9 @@ const CheckInFormEnhanced = () => {
     try {
       const data = await roomService.getRoomById(roomId);
       setRoom(data);
-      if (data.status !== 'Available') {
-        toast.error('Esta habitación no está disponible');
-        navigate('/rooms');
-      }
+      
+      // Ya no verificamos el status - el calendario mostrará fechas bloqueadas
+      // El usuario puede reservar para fechas futuras aunque la habitación esté ocupada hoy
       
       // Fetch blocked dates for this room
       await fetchBlockedDates();
@@ -78,35 +80,38 @@ const CheckInFormEnhanced = () => {
   const fetchBlockedDates = async () => {
     try {
       const response = await api.get(`/reservations/room/${roomId}/blocked-dates`);
-      setBlockedDates(response.data.blocked_dates || []);
+      const blocked = response.data.blocked_dates || [];
+      console.log('Fechas bloqueadas recibidas del backend:', blocked);
+      console.log('Tipo de datos:', blocked.map(d => typeof d));
+      setBlockedDates(blocked);
     } catch (error) {
       console.error('Error loading blocked dates:', error);
       // No mostrar error, solo continuar sin fechas bloqueadas
     }
   };
 
-  const isDateBlocked = (dateStr) => {
+  const isDateBlocked = (date) => {
+    if (!date) return false;
+    const dateStr = date instanceof Date 
+      ? date.toISOString().split('T')[0]
+      : date;
     return blockedDates.includes(dateStr);
   };
 
   const isRangeBlocked = (checkIn, checkOut) => {
-    const start = new Date(checkIn);
-    const end = new Date(checkOut);
+    if (!checkIn || !checkOut) return false;
+    
+    const start = checkIn instanceof Date ? checkIn : new Date(checkIn);
+    const end = checkOut instanceof Date ? checkOut : new Date(checkOut);
     const current = new Date(start);
     
     while (current < end) {
-      const dateStr = current.toISOString().split('T')[0];
-      if (isDateBlocked(dateStr)) {
+      if (isDateBlocked(current)) {
         return true;
       }
       current.setDate(current.getDate() + 1);
     }
     return false;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const checkAvailability = async () => {
@@ -134,11 +139,15 @@ const CheckInFormEnhanced = () => {
     setCheckingAvailability(true);
 
     try {
+      // Convertir fechas a formato ISO string para la API
+      const checkInStr = formData.checkIn.toISOString().split('T')[0];
+      const checkOutStr = formData.checkOut.toISOString().split('T')[0];
+      
       const response = await api.post('/reservations/check-availability', null, {
         params: {
           room_id: roomId,
-          check_in: formData.checkIn,
-          check_out: formData.checkOut,
+          check_in: checkInStr,
+          check_out: checkOutStr,
           guests_count: formData.guestsCount
         }
       });
@@ -172,7 +181,7 @@ const CheckInFormEnhanced = () => {
         check_out_date: formData.checkOut,
         guests_count: parseInt(formData.guestsCount),
         special_requests: formData.specialRequests || null,
-        status: 'Active',
+        status: 'Pending', // Pending hasta que el recepcionista haga check-in
         total_price: parseFloat(availability.total_price),
         payment_method: 'PayPal',
         payment_status: 'Paid'
@@ -271,22 +280,63 @@ const CheckInFormEnhanced = () => {
                 Selecciona tus Fechas
               </h2>
 
+              {/* Alert solo si hay conflicto con las fechas seleccionadas */}
+              {blockedDates.length > 0 && formData.checkIn && formData.checkOut && 
+               (isDateBlocked(formData.checkIn) || isDateBlocked(formData.checkOut) || isRangeBlocked(formData.checkIn, formData.checkOut)) && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <FiAlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-red-900 mb-1">
+                        ⚠️ Fechas No Disponibles
+                      </h3>
+                      <p className="text-sm text-red-800">
+                        Las fechas seleccionadas están ocupadas. Por favor, elige otras fechas disponibles en el calendario.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Info simple si hay fechas bloqueadas pero no hay conflicto */}
+              {blockedDates.length > 0 && 
+               (!formData.checkIn || !formData.checkOut || 
+                (!isDateBlocked(formData.checkIn) && !isDateBlocked(formData.checkOut) && !isRangeBlocked(formData.checkIn, formData.checkOut))) && (
+                <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                    <FiAlertCircle className="w-4 h-4" />
+                    <span>
+                      💡 Hay fechas ocupadas en esta habitación. Aparecerán deshabilitadas en el calendario.
+                    </span>
+                  </p>
+                </div>
+              )}
+
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Fecha de Entrada
                   </label>
-                  <input
-                    type="date"
-                    name="checkIn"
-                    value={formData.checkIn}
-                    onChange={handleInputChange}
-                    min={new Date().toISOString().split('T')[0]}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                      formData.checkIn && isDateBlocked(formData.checkIn) 
-                        ? 'border-red-500 bg-red-50' 
-                        : 'border-gray-300'
-                    }`}
+                  <DatePicker
+                    selected={formData.checkIn}
+                    onChange={(date) => setFormData(prev => ({ ...prev, checkIn: date }))}
+                    selectsStart
+                    startDate={formData.checkIn}
+                    endDate={formData.checkOut}
+                    minDate={new Date()}
+                    filterDate={(date) => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      const isBlocked = blockedDates.includes(dateStr);
+                      if (isBlocked) {
+                        console.log(`Fecha ${dateStr} está bloqueada`);
+                      }
+                      return !isBlocked;
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="Selecciona fecha de entrada"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    calendarClassName="custom-calendar"
+                    wrapperClassName="w-full"
                   />
                   {formData.checkIn && isDateBlocked(formData.checkIn) && (
                     <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
@@ -300,17 +350,22 @@ const CheckInFormEnhanced = () => {
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Fecha de Salida
                   </label>
-                  <input
-                    type="date"
-                    name="checkOut"
-                    value={formData.checkOut}
-                    onChange={handleInputChange}
-                    min={formData.checkIn || new Date().toISOString().split('T')[0]}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                      formData.checkIn && formData.checkOut && isRangeBlocked(formData.checkIn, formData.checkOut)
-                        ? 'border-red-500 bg-red-50' 
-                        : 'border-gray-300'
-                    }`}
+                  <DatePicker
+                    selected={formData.checkOut}
+                    onChange={(date) => setFormData(prev => ({ ...prev, checkOut: date }))}
+                    selectsEnd
+                    startDate={formData.checkIn}
+                    endDate={formData.checkOut}
+                    minDate={formData.checkIn || new Date()}
+                    filterDate={(date) => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      return !blockedDates.includes(dateStr);
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="Selecciona fecha de salida"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    calendarClassName="custom-calendar"
+                    wrapperClassName="w-full"
                   />
                   {formData.checkIn && formData.checkOut && isRangeBlocked(formData.checkIn, formData.checkOut) && (
                     <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
@@ -321,19 +376,6 @@ const CheckInFormEnhanced = () => {
                 </div>
               </div>
 
-              {/* Info about blocked dates */}
-              {blockedDates.length > 0 && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 flex items-center gap-2">
-                    <FiAlertCircle className="w-4 h-4" />
-                    <span>
-                      Esta habitación tiene {blockedDates.length} fecha{blockedDates.length !== 1 ? 's' : ''} reservada{blockedDates.length !== 1 ? 's' : ''}. 
-                      Selecciona fechas disponibles para continuar.
-                    </span>
-                  </p>
-                </div>
-              )}
-
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-900 mb-2">
                   <FiUsers className="inline mr-2" />
@@ -343,7 +385,7 @@ const CheckInFormEnhanced = () => {
                   type="number"
                   name="guestsCount"
                   value={formData.guestsCount}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, guestsCount: parseInt(e.target.value) }))}
                   min="1"
                   max={room.capacity}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -358,7 +400,7 @@ const CheckInFormEnhanced = () => {
                 <textarea
                   name="specialRequests"
                   value={formData.specialRequests}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, specialRequests: e.target.value }))}
                   rows="3"
                   placeholder="Ej: Cama extra, cuna para bebé, piso alto, etc."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"

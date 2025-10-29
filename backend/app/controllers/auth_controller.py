@@ -7,8 +7,9 @@ from app.database import get_db
 from app.schemas import AdminCreate, AdminLogin, Admin, Token
 from app.services import AuthService
 from app.config import settings
+from app.middleware.admin_middleware import verify_admin_token
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix=f"{settings.ADMIN_ROUTE_PREFIX}/auth", tags=["Admin Authentication"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -59,6 +60,6 @@ async def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = D
     return admin
 
 @router.get("/me", response_model=Admin)
-async def read_admin_me(current_admin: Admin = Depends(get_current_admin)):
-    """Get current admin profile"""
+async def read_admin_me(current_admin: Admin = Depends(verify_admin_token)):
+    """Get current admin profile (protected route)"""
     return current_admin

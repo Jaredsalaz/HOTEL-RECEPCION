@@ -56,7 +56,7 @@ const AdminLogin = () => {
       await authService.login(credentials.username, credentials.password);
       
       toast.success('¡Bienvenido!');
-      navigate('/admin');
+      navigate('/secure-admin-xyz789');
       
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -70,7 +70,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,12 +85,15 @@ const AdminLogin = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="inline-block bg-white p-4 rounded-full shadow-xl mb-4"
           >
-            <FiLock className="w-12 h-12 text-primary" />
+            <FiLock className="w-12 h-12 text-gray-900" />
           </motion.div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Panel de Administración
+            🏨 Sistema de Recepción Hotelera
           </h1>
-          <p className="text-white/80">
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            Panel de Administración
+          </h2>
+          <p className="text-white/90 text-lg">
             Ingresa tus credenciales para continuar
           </p>
         </div>
@@ -98,9 +101,18 @@ const AdminLogin = () => {
         {/* Login Card */}
         <Card>
           <Card.Body>
+            <div className="mb-6 text-center">
+              <h3 className="text-xl font-bold text-gray-800 mb-1">
+                Iniciar Sesión
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Acceso exclusivo para administradores
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <Input
-                label="Usuario"
+                label="Nombre de Usuario"
                 name="username"
                 value={credentials.username}
                 onChange={handleChange}
@@ -108,7 +120,7 @@ const AdminLogin = () => {
                 required
                 autoFocus
                 icon={<FiUser className="w-5 h-5 text-gray-400" />}
-                placeholder="admin"
+                placeholder="Ingresa tu usuario"
               />
               
               <Input
@@ -120,13 +132,13 @@ const AdminLogin = () => {
                 error={errors.password}
                 required
                 icon={<FiLock className="w-5 h-5 text-gray-400" />}
-                placeholder="••••••••"
+                placeholder="Ingresa tu contraseña"
               />
               
               <Button
                 type="submit"
                 size="lg"
-                className="w-full"
+                className="w-full !bg-gray-900 hover:!bg-gray-800 !text-white !font-bold !shadow-lg"
                 loading={loading}
               >
                 Iniciar Sesión

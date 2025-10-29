@@ -153,7 +153,7 @@ class ReportService:
                     f"{res.guest.first_name} {res.guest.last_name}",
                     res.check_in_date.strftime('%Y-%m-%d'),
                     res.check_out_date.strftime('%Y-%m-%d'),
-                    res.status.value
+                    res.status
                 ])
             
             res_table = Table(reservation_data, colWidths=[0.5*inch, 0.8*inch, 1.5*inch, 1.2*inch, 1.2*inch, 1*inch])
@@ -257,7 +257,7 @@ class ReportService:
             ws_reservations.cell(row=row, column=7, value=res.check_out_date.strftime('%Y-%m-%d'))
             ws_reservations.cell(row=row, column=8, value=res.guests_count)
             ws_reservations.cell(row=row, column=9, value=float(res.total_price))
-            ws_reservations.cell(row=row, column=10, value=res.status.value)
+            ws_reservations.cell(row=row, column=10, value=res.status)
         
         # Adjust column widths
         for col in range(1, 11):
@@ -298,8 +298,8 @@ class ReportService:
             report['rooms_detail'].append({
                 'id': room.id,
                 'room_number': room.room_number,
-                'type': room.type.value,
-                'status': room.status.value,
+                'type': room.type,
+                'status': room.status,
                 'price_per_night': float(room.price_per_night),
                 'capacity': room.capacity,
                 'floor': room.floor

@@ -36,7 +36,7 @@ const SearchBar = ({
       {onSearch && (
         <button
           onClick={() => onSearch(value)}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white px-4 py-1.5 rounded-md hover:bg-primary-dark transition-colors"
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white px-4 py-1.5 rounded-md hover:bg-primary-700 transition-colors"
         >
           Buscar
         </button>

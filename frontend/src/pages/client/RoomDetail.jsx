@@ -87,8 +87,9 @@ const RoomDetail = () => {
     bathtub: '🛁'
   };
 
-  // Check if room is available (case insensitive)
-  const isAvailable = room.status?.toLowerCase() === 'available';
+  // Siempre permitir reservar - el calendario mostrará las fechas disponibles
+  const canReserve = true;
+  const isCurrentlyAvailable = room.status?.toLowerCase() === 'available';
 
   /**
    * Handle reservation button click
@@ -255,11 +256,11 @@ const RoomDetail = () => {
                 
                 {/* Status badge */}
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                  isAvailable
+                  isCurrentlyAvailable
                     ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
+                    : 'bg-orange-100 text-orange-800'
                 }`}>
-                  {isAvailable ? 'Disponible' : 'No Disponible'}
+                  {isCurrentlyAvailable ? 'Disponible Ahora' : 'Ocupada Hoy'}
                 </span>
               </div>
 
@@ -289,24 +290,20 @@ const RoomDetail = () => {
                 </div>
               </div>
 
-              {/* Book button */}
-              {isAvailable ? (
-                <Button 
-                  size="lg" 
-                  className="w-full !bg-primary-600 !text-white hover:!bg-primary-700 flex items-center justify-center gap-2"
-                  onClick={handleReservationClick}
-                >
-                  <FiCalendar className="w-5 h-5" />
-                  Reservar Ahora
-                </Button>
-              ) : (
-                <Button 
-                  size="lg" 
-                  className="w-full"
-                  disabled
-                >
-                  No Disponible
-                </Button>
+              {/* Book button - Siempre disponible */}
+              <Button 
+                size="lg" 
+                className="w-full !bg-primary-600 !text-white hover:!bg-primary-700 flex items-center justify-center gap-2"
+                onClick={handleReservationClick}
+              >
+                <FiCalendar className="w-5 h-5" />
+                {isCurrentlyAvailable ? 'Reservar Ahora' : 'Ver Fechas Disponibles'}
+              </Button>
+              
+              {!isCurrentlyAvailable && (
+                <p className="text-sm text-gray-600 text-center mt-2">
+                  Esta habitación está ocupada hoy, pero puedes reservarla para otras fechas
+                </p>
               )}
 
               {/* Info note */}

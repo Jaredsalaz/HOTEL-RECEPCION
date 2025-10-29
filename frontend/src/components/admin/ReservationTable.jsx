@@ -21,17 +21,36 @@ const ReservationTable = ({
   onCheckOut,
   loading = false
 }) => {
+  // Detectar si es No-Show
+  const isNoShow = (reservation) => {
+    return (
+      reservation.status === 'Cancelled' && 
+      reservation.payment_status === 'Paid' &&
+      !reservation.actual_check_in &&
+      new Date(reservation.check_in_date) < new Date()
+    );
+  };
+
   // Badge de estado
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, reservation = null) => {
+    // Si es No-Show, mostrar badge especial
+    if (reservation && isNoShow(reservation)) {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+          Expirada (No-Show)
+        </span>
+      );
+    }
+
     const badges = {
-      pending: { text: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
-      confirmed: { text: 'Confirmada', color: 'bg-blue-100 text-blue-800' },
-      active: { text: 'Activa', color: 'bg-green-100 text-green-800' },
-      completed: { text: 'Completada', color: 'bg-gray-100 text-gray-800' },
-      cancelled: { text: 'Cancelada', color: 'bg-red-100 text-red-800' }
+      Pending: { text: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
+      Confirmed: { text: 'Confirmada', color: 'bg-blue-100 text-blue-800' },
+      Active: { text: 'Activa', color: 'bg-green-100 text-green-800' },
+      Completed: { text: 'Completada', color: 'bg-gray-100 text-gray-800' },
+      Cancelled: { text: 'Cancelada', color: 'bg-red-100 text-red-800' }
     };
 
-    const badge = badges[status] || badges.pending;
+    const badge = badges[status] || badges.Pending;
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
@@ -118,7 +137,7 @@ const ReservationTable = ({
                   {formatCurrency(reservation.total_price)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(reservation.status)}
+                  {getStatusBadge(reservation.status, reservation)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
@@ -131,8 +150,8 @@ const ReservationTable = ({
                       <FiEye className="w-5 h-5" />
                     </button>
 
-                    {/* Check-in (solo si es pending o confirmed) */}
-                    {(reservation.status === 'pending' || reservation.status === 'confirmed') && onCheckIn && (
+                    {/* Check-in (solo si es Pending o Confirmed) */}
+                    {(reservation.status === 'Pending' || reservation.status === 'Confirmed') && onCheckIn && (
                       <button
                         onClick={() => onCheckIn(reservation)}
                         className="text-green-600 hover:text-green-800 transition-colors"
@@ -142,8 +161,8 @@ const ReservationTable = ({
                       </button>
                     )}
 
-                    {/* Check-out (solo si es active) */}
-                    {reservation.status === 'active' && onCheckOut && (
+                    {/* Check-out (solo si es Active) */}
+                    {reservation.status === 'Active' && onCheckOut && (
                       <button
                         onClick={() => onCheckOut(reservation)}
                         className="text-purple-600 hover:text-purple-800 transition-colors"
@@ -153,19 +172,8 @@ const ReservationTable = ({
                       </button>
                     )}
 
-                    {/* Editar (solo si no está completed o cancelled) */}
-                    {reservation.status !== 'completed' && reservation.status !== 'cancelled' && onEdit && (
-                      <button
-                        onClick={() => onEdit(reservation)}
-                        className="text-yellow-600 hover:text-yellow-800 transition-colors"
-                        title="Editar"
-                      >
-                        <FiEdit className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    {/* Cancelar (solo si no está completed o cancelled) */}
-                    {reservation.status !== 'completed' && reservation.status !== 'cancelled' && onCancel && (
+                    {/* Cancelar (solo si no está Completed o Cancelled) */}
+                    {reservation.status !== 'Completed' && reservation.status !== 'Cancelled' && onCancel && (
                       <button
                         onClick={() => onCancel(reservation)}
                         className="text-red-600 hover:text-red-800 transition-colors"

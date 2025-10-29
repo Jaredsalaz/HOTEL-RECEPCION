@@ -54,7 +54,7 @@ const RoomCatalog = () => {
       
       console.log('Filtros al buscar:', { checkIn, checkOut, roomType });
       
-      // Si hay fechas, buscar disponibles con filtros
+      // Si hay fechas, buscar disponibles con filtros de fecha
       if (checkIn && checkOut) {
         data = await roomService.searchAvailableRooms(
           checkIn.toISOString().split('T')[0],
@@ -62,11 +62,12 @@ const RoomCatalog = () => {
           roomType || null,
           null // Ya no enviamos capacidad
         );
-        console.log('Habitaciones con fechas:', data);
+        console.log('Habitaciones disponibles para las fechas:', data);
       } else {
-        // Si no hay fechas, traer todas las disponibles (sin filtros de tipo/capacidad)
-        data = await roomService.getRoomsByStatus('available');
-        console.log('Habitaciones sin fechas:', data);
+        // Si no hay fechas, traer TODAS las habitaciones (no solo disponibles)
+        // El usuario puede elegir fechas después y verificar disponibilidad
+        data = await roomService.getAllRooms();
+        console.log('Todas las habitaciones:', data);
       }
       
       console.log('Total habitaciones recibidas:', data?.length || 0);

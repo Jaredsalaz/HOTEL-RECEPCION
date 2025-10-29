@@ -29,7 +29,7 @@ const AdminNavbar = ({ toggleSidebar }) => {
   const handleLogout = () => {
     authService.logout();
     toast.success('Sesión cerrada correctamente');
-    navigate('/admin/login');
+    navigate('/secure-admin-xyz789/login');
   };
 
   return (

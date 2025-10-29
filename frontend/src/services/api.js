@@ -25,11 +25,11 @@ api.interceptors.response.use(
     // Only redirect to admin login if we're already in an admin route
     // and the token is invalid (not for login failures)
     if (error.response?.status === 401 && 
-        window.location.pathname.startsWith('/admin') &&
-        window.location.pathname !== '/admin/login') {
+        window.location.pathname.startsWith('/secure-admin-xyz789') &&
+        window.location.pathname !== '/secure-admin-xyz789/login') {
       localStorage.removeItem('token');
       localStorage.removeItem('guest_token');
-      window.location.href = '/admin/login';
+      window.location.href = '/secure-admin-xyz789/login';
     }
     return Promise.reject(error);
   }

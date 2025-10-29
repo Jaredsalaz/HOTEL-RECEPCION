@@ -140,7 +140,7 @@ const AdminDashboard = () => {
             reservations={todayCheckIns}
             onView={(reservation) => {
               // Implementar ver detalles
-              toast.info(`Ver detalles de reserva #${reservation.id}`);
+              toast(`Ver detalles de reserva #${reservation.id}`, { icon: 'ℹ️' });
             }}
           />
         </motion.div>
@@ -159,7 +159,7 @@ const AdminDashboard = () => {
           <ReservationTable
             reservations={todayCheckOuts}
             onView={(reservation) => {
-              toast.info(`Ver detalles de reserva #${reservation.id}`);
+              toast(`Ver detalles de reserva #${reservation.id}`, { icon: 'ℹ️' });
             }}
           />
         </motion.div>

@@ -84,11 +84,9 @@ const ReservationManagement = () => {
     }
     
     try {
-      await checkinService.checkIn({
-        reservation_id: reservation.id
-      });
+      await checkinService.markCheckIn(reservation.id);
       
-      toast.success('Check-in realizado exitosamente');
+      toast.success('Check-in realizado exitosamente. Email de bienvenida enviado.');
       await fetchReservations();
     } catch (error) {
       console.error('Error al hacer check-in:', error);
@@ -102,11 +100,9 @@ const ReservationManagement = () => {
     }
     
     try {
-      await checkinService.checkOut({
-        reservation_id: reservation.id
-      });
+      await checkinService.checkOut(reservation.id);
       
-      toast.success('Check-out realizado exitosamente');
+      toast.success('Check-out realizado exitosamente. Email de agradecimiento enviado.');
       await fetchReservations();
     } catch (error) {
       console.error('Error al hacer check-out:', error);
@@ -121,7 +117,7 @@ const ReservationManagement = () => {
     
     try {
       await reservationService.deleteReservation(reservation.id);
-      toast.success('Reserva cancelada');
+      toast.success('Reserva cancelada. Email de confirmación enviado.');
       await fetchReservations();
     } catch (error) {
       console.error('Error al cancelar:', error);

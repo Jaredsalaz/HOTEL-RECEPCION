@@ -1,15 +1,17 @@
 import api from './api';
 
+const ADMIN_PREFIX = '/secure-admin-xyz789';
+
 export const reportService = {
   // Get dashboard statistics
   getDashboardStats: async () => {
-    const response = await api.get('/reports/dashboard');
+    const response = await api.get(`${ADMIN_PREFIX}/reports/dashboard`);
     return response.data;
   },
 
   // Download occupancy PDF
   downloadOccupancyPDF: async (startDate, endDate) => {
-    const response = await api.get('/reports/occupancy/pdf', {
+    const response = await api.get(`${ADMIN_PREFIX}/reports/occupancy/pdf`, {
       params: {
         start_date: startDate,
         end_date: endDate,
@@ -29,7 +31,7 @@ export const reportService = {
 
   // Download occupancy Excel
   downloadOccupancyExcel: async (startDate, endDate) => {
-    const response = await api.get('/reports/occupancy/excel', {
+    const response = await api.get(`${ADMIN_PREFIX}/reports/occupancy/excel`, {
       params: {
         start_date: startDate,
         end_date: endDate,
@@ -49,13 +51,13 @@ export const reportService = {
 
   // Get room status report
   getRoomStatusReport: async () => {
-    const response = await api.get('/reports/rooms-status');
+    const response = await api.get(`${ADMIN_PREFIX}/reports/rooms-status`);
     return response.data;
   },
 
   // Get occupancy rate
   getOccupancyRate: async () => {
-    const response = await api.get('/reports/occupancy-rate');
+    const response = await api.get(`${ADMIN_PREFIX}/reports/occupancy-rate`);
     return response.data;
   },
 };

@@ -5,8 +5,14 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.schemas import DashboardStats
 from app.services import ReportService
+from app.middleware.admin_middleware import verify_admin_token
+from app.config import settings
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
+router = APIRouter(
+    prefix=f"{settings.ADMIN_ROUTE_PREFIX}/reports", 
+    tags=["Admin Reports"],
+    dependencies=[Depends(verify_admin_token)]  # Todas las rutas requieren admin
+)
 
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard_statistics(db: Session = Depends(get_db)):

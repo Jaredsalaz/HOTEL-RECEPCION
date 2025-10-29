@@ -17,23 +17,23 @@ const AdminSidebar = ({ isOpen }) => {
 
   const menuItems = [
     {
-      path: '/admin',
+      path: '/secure-admin-xyz789',
       icon: <FiHome className="w-5 h-5" />,
       label: 'Dashboard',
       exact: true
     },
     {
-      path: '/admin/rooms',
+      path: '/secure-admin-xyz789/rooms',
       icon: <FiGrid className="w-5 h-5" />,
       label: 'Habitaciones'
     },
     {
-      path: '/admin/reservations',
+      path: '/secure-admin-xyz789/reservations',
       icon: <FiCalendar className="w-5 h-5" />,
       label: 'Reservaciones'
     },
     {
-      path: '/admin/reports',
+      path: '/secure-admin-xyz789/reports',
       icon: <FiFileText className="w-5 h-5" />,
       label: 'Reportes'
     }

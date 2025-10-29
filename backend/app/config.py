@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
+    # Admin Security
+    ADMIN_ROUTE_PREFIX: str = "/secure-admin-xyz789"
+    ADMIN_SESSION_TIMEOUT: int = 30  # minutes
+    ADMIN_MAX_LOGIN_ATTEMPTS: int = 5
+    ADMIN_LOCKOUT_DURATION: int = 15  # minutes
+    
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     

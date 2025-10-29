@@ -108,6 +108,44 @@ class ReservationService:
         return reservation
     
     @staticmethod
+    def mark_checkin(db: Session, reservation_id: int) -> Reservation:
+        """Mark existing reservation as checked-in (Active)"""
+        from datetime import date as date_type
+        
+        reservation = ReservationService.get_reservation_by_id(db, reservation_id)
+        if not reservation:
+            raise ValueError("Reservation not found")
+        
+        if reservation.status == ReservationStatus.ACTIVE:
+            raise ValueError("Reservation is already checked-in")
+        
+        if reservation.status == ReservationStatus.COMPLETED:
+            raise ValueError("Cannot check-in a completed reservation")
+        
+        if reservation.status == ReservationStatus.CANCELLED:
+            raise ValueError("Cannot check-in a cancelled reservation")
+        
+        # Validate check-in date: must be today or earlier
+        today = date_type.today()
+        check_in_date = reservation.check_in_date
+        if isinstance(check_in_date, datetime):
+            check_in_date = check_in_date.date()
+        
+        if check_in_date > today:
+            raise ValueError(f"No se puede hacer check-in antes de la fecha programada. Check-in programado para: {check_in_date.strftime('%d/%m/%Y')}")
+        
+        # Update reservation status to ACTIVE and set actual check-in time
+        reservation.status = ReservationStatus.ACTIVE
+        reservation.actual_check_in = datetime.now()
+        
+        # Update room status to OCCUPIED
+        RoomService.update_room_status(db, reservation.room_id, RoomStatus.OCCUPIED)
+        
+        db.commit()
+        db.refresh(reservation)
+        return reservation
+    
+    @staticmethod
     def check_out(db: Session, reservation_id: int) -> Reservation:
         """Process check-out"""
         reservation = ReservationService.get_reservation_by_id(db, reservation_id)
@@ -228,3 +266,76 @@ class ReservationService:
                 Reservation.check_out_date <= end_date
             )
         ).all()
+    
+    @staticmethod
+    def auto_cancel_expired_reservations(db: Session) -> int:
+        """
+        Auto-cancel reservations that are Pending but check-in date has passed
+        Returns number of cancelled reservations (No-Show)
+        """
+        now = datetime.now()
+        
+        # Find Pending reservations where check-in date has passed (more than 24 hours)
+        expired_reservations = db.query(Reservation).filter(
+            and_(
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.check_in_date < now - timedelta(hours=24)
+            )
+        ).all()
+        
+        count = 0
+        for reservation in expired_reservations:
+            reservation.status = ReservationStatus.CANCELLED
+            count += 1
+        
+        if count > 0:
+            db.commit()
+        
+        return count
+    
+    @staticmethod
+    def auto_complete_overdue_checkouts(db: Session) -> int:
+        """
+        Auto-complete reservations that are Active but check-out date has passed
+        Returns number of completed reservations
+        """
+        now = datetime.now()
+        
+        # Find Active reservations where check-out date has passed
+        overdue_reservations = db.query(Reservation).filter(
+            and_(
+                Reservation.status == ReservationStatus.ACTIVE,
+                Reservation.check_out_date < now
+            )
+        ).all()
+        
+        count = 0
+        for reservation in overdue_reservations:
+            reservation.status = ReservationStatus.COMPLETED
+            reservation.actual_check_out = now
+            
+            # Free up the room
+            if reservation.room:
+                RoomService.update_room_status(db, reservation.room_id, RoomStatus.AVAILABLE)
+            
+            count += 1
+        
+        if count > 0:
+            db.commit()
+        
+        return count
+    
+    @staticmethod
+    def process_expired_reservations(db: Session) -> dict:
+        """
+        Process all expired reservations (both no-shows and overdue checkouts)
+        Returns summary of actions taken
+        """
+        cancelled = ReservationService.auto_cancel_expired_reservations(db)
+        completed = ReservationService.auto_complete_overdue_checkouts(db)
+        
+        return {
+            'cancelled_no_shows': cancelled,
+            'completed_overdue': completed,
+            'total_processed': cancelled + completed
+        }
