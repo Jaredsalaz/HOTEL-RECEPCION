@@ -16,7 +16,7 @@ class RoomBase(BaseModel):
     image_url: Optional[str] = None
 
 class RoomCreate(RoomBase):
-    pass
+    gallery_images: Optional[List[str]] = []  # URLs for gallery images
 
 class RoomUpdate(BaseModel):
     room_number: Optional[str] = None
@@ -28,6 +28,7 @@ class RoomUpdate(BaseModel):
     status: Optional[str] = None
     floor: Optional[int] = None
     image_url: Optional[str] = None
+    gallery_images: Optional[List[str]] = None  # URLs for gallery images
 
 class RoomImageBase(BaseModel):
     image_url: str

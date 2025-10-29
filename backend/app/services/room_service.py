@@ -27,6 +27,8 @@ class RoomService:
     @staticmethod
     def create_room(db: Session, room: RoomCreate) -> Room:
         """Create new room"""
+        from app.models import RoomImage
+        
         db_room = Room(
             room_number=room.room_number,
             type=room.type,
@@ -39,6 +41,18 @@ class RoomService:
             image_url=room.image_url
         )
         db.add(db_room)
+        db.flush()  # Get room ID before adding images
+        
+        # Add gallery images
+        if room.gallery_images:
+            for idx, img_url in enumerate(room.gallery_images):
+                room_image = RoomImage(
+                    room_id=db_room.id,
+                    image_url=img_url,
+                    is_primary=(idx == 0)  # First image is primary
+                )
+                db.add(room_image)
+        
         db.commit()
         db.refresh(db_room)
         return db_room
@@ -46,13 +60,34 @@ class RoomService:
     @staticmethod
     def update_room(db: Session, room_id: int, room_update: RoomUpdate) -> Optional[Room]:
         """Update room"""
+        from app.models import RoomImage
+        
         db_room = RoomService.get_room_by_id(db, room_id)
         if not db_room:
             return None
         
         update_data = room_update.dict(exclude_unset=True)
+        
+        # Handle gallery_images separately
+        gallery_images = update_data.pop('gallery_images', None)
+        
+        # Update basic fields
         for field, value in update_data.items():
             setattr(db_room, field, value)
+        
+        # Update gallery images if provided
+        if gallery_images is not None:
+            # Delete existing images
+            db.query(RoomImage).filter(RoomImage.room_id == room_id).delete()
+            
+            # Add new images
+            for idx, img_url in enumerate(gallery_images):
+                room_image = RoomImage(
+                    room_id=room_id,
+                    image_url=img_url,
+                    is_primary=(idx == 0)
+                )
+                db.add(room_image)
         
         db.commit()
         db.refresh(db_room)
